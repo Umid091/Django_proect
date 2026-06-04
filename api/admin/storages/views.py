@@ -1,4 +1,8 @@
-
+import os
+import requests
+from datetime import datetime
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,7 +17,6 @@ class StoragesListCreateAPIView(APIView):
         queryset = Storages.objects.all().values(
             'id', 'recording', 'media_id', 'solution_id', 'report_id', 'type'
         )
-
         return Response({
             "success": True,
             "count": queryset.count(),
@@ -22,57 +25,68 @@ class StoragesListCreateAPIView(APIView):
 
     def post(self, request):
         data_list = request.data
-
         if not isinstance(data_list, list):
-            return Response({
-                "success": False,
-                "detail": "Ma'lumotlar JSON ro'yxat (massiv) ko'rinishida bo'lishi shart"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": False, "detail": "Ro'yxat (list) yuboring"}, status=status.HTTP_400_BAD_REQUEST)
 
-        storage_objects = []
+        BASE_HOST = "https://dev.ohayo.uz/media/"
+        instances_to_create = []
+        results = []
+        errors = []
 
         for item in data_list:
-            media_id = item.get('media_id')
-            solution_id = item.get('solution_id')
-            report_id = item.get('report_id')
+            raw_url = str(item.get("recording", "")).strip()
+            clean_url = raw_url.replace("https:recordings/", "recordings/").replace("http:recordings/", "recordings/")
+            full_url = clean_url if clean_url.startswith("http") else BASE_HOST + clean_url
 
-            obj = Storages(
-                recording=item.get('recording'),
-                media_id=int(media_id) if media_id else None,
-                solution_id=int(solution_id) if solution_id else None,
-                report_id=int(report_id) if report_id else None,
-                type=item.get('type', 'part')
-            )
-            storage_objects.append(obj)
+            try:
+                response = requests.get(full_url, timeout=20)
+                if response.status_code == 200:
+                    filename = os.path.basename(full_url.split('?')[0])
+                    date_path = datetime.now().strftime("recordings/%Y/%m/%d")
+                    save_path = os.path.join(date_path, filename)
 
-        if not storage_objects:
-            return Response({
-                "success": False,
-                "detail": "Yuborilgan ro'yxat bo'sh"
-            }, status=status.HTTP_400_BAD_REQUEST)
+                    saved_path = default_storage.save(save_path, ContentFile(response.content))
 
-        try:
-            created_instances = Storages.objects.bulk_create(storage_objects, batch_size=1000) ###bu batch_size malumotlarni 1000 talab oladi mingtadan ko'p bo'lsa.
+                    instances_to_create.append(Storages(
+                        recording=saved_path,
+                        media_id=item.get("media_id"),
+                        solution_id=item.get("solution_id"),
+                        report_id=item.get("report_id"),
+                        type=item.get("type", "part")
+                    ))
+                else:
+                    errors.append({"url": full_url, "error": f"Status {response.status_code}"})
+            except Exception as e:
+                errors.append({"url": full_url, "error": str(e)})
 
-            response_data = []
-            for instance in created_instances:
-                response_data.append({
-                    "id": instance.id,
-                    "recording": instance.recording.url if instance.recording else None,
-                    "media_id": instance.media_id,
-                    "solution_id": instance.solution_id,
-                    "report_id": instance.report_id,
-                    "type": instance.type
+        if instances_to_create:
+            created_instances = Storages.objects.bulk_create(instances_to_create)
+            for inst in created_instances:
+                results.append({
+                    "id": inst.id,
+                    "media_id": inst.media_id,
+                    "recording": str(inst.recording),
+                    "type": inst.type
                 })
 
+        if instances_to_create and not errors:
             return Response({
                 "success": True,
-                "message": f" Jami {len(response_data)} ta ma'lumot muvaffaqiyatli saqlandi ",
-                "results": response_data
+                "message": f"{len(results)} ta fayl muvaffaqiyatli saqlandi.",
+                "results": results
             }, status=status.HTTP_201_CREATED)
 
-        except Exception as e:
+        elif instances_to_create and errors:
             return Response({
                 "success": False,
-                "detail": f"  bazaga yozishda xatolik chiqdi: {str(e)}"
+                "message": f"Qisman bajarildi: {len(results)} ta saqlandi, {len(errors)} ta xatolik bor.",
+                "results": results,
+                "errors": errors
+            }, status=status.HTTP_207_MULTI_STATUS)
+
+        else:
+            return Response({
+                "success": False,
+                "message": "Hech qaysi fayl saqlanmadi.",
+                "errors": errors
             }, status=status.HTTP_400_BAD_REQUEST)
