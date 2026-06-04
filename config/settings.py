@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.common',
     'blog',
+    'apps.storages',
 ]
 
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'

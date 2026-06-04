@@ -5,5 +5,6 @@ urlpatterns = [
     path('blog/',include('api.admin.blog.urls')),
     path('common/',include('api.admin.common.urls')),
     path('users/', include('api.admin.users.urls')),
+    path('storages/', include('api.admin.storages.urls')),
     # path('testing/',include('api.testing.urls')),
 ]
