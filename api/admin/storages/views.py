@@ -60,7 +60,7 @@ class StoragesListCreateAPIView(APIView):
                 errors.append({"url": full_url, "error": str(e)})
 
         if instances_to_create:
-            created_instances = Storages.objects.bulk_create(instances_to_create)
+            created_instances = Storages.objects.bulk_create(instances_to_create,   batch_size=1000)
             for inst in created_instances:
                 results.append({
                     "id": inst.id,

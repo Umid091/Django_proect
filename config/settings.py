@@ -1,7 +1,10 @@
 from pathlib import Path
 from celery.schedules import crontab
 
+import sys
+import os
 BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
 SECRET_KEY = 'django-insecure-(!e$0l5ms3$+qy4((h&*o&-4$+fh%vvczcbxn6b8=87zb^f_f7'
 DEBUG = True
@@ -30,6 +33,7 @@ INSTALLED_APPS = [
     'apps.common',
     'blog',
     'apps.storages',
+    'apps.testmedia',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
