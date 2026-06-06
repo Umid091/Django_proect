@@ -6,7 +6,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-(!e$0l5ms3$+qy4((h&*o&-4$+fh%vvczcbxn6b8=87zb^f_f7'
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'media.nozim-dev.uz',
+    'nozim-dev.uz',
+ ]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -26,6 +31,12 @@ INSTALLED_APPS = [
     'blog',
     'apps.storages',
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://media.nozim-dev.uz',
+    'https://nozim-dev.uz',
+]
+
 
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
@@ -109,7 +120,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 import os
 
-STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
