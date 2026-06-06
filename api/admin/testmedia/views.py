@@ -1,13 +1,26 @@
+from calendar import day_abbr
+
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny
-
+from rest_framework.response import Response
 from apps.testmedia.models import DataModel
-from api.admin.testmedia.serializer import MediaDataSerializer
+from rest_framework.views import APIView
 
-class MediaDataCreateView(CreateAPIView):
-    queryset = DataModel.objects.all()
-    serializer_class = MediaDataSerializer
-    permission_classes = [AllowAny]
+# from api.admin.testmedia.serializer import MediaDataSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(payload=self.request.data)
+class MediaDataCreateView(APIView):
+    permission_classes = [AllowAny, ]
+
+    def post(self, request, *args, **kwargs):
+        data =request.data
+        obj=DataModel.objects.create(payload=data)
+
+        return Response(
+            {
+                'key':data
+            }
+        )
+
+
+
+
