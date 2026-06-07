@@ -9,14 +9,19 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 SECRET_KEY = 'django-insecure-(!e$0l5ms3$+qy4((h&*o&-4$+fh%vvczcbxn6b8=87zb^f_f7'
 DEBUG = True
 
-#ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = [
-    'media.nozim-dev.uz',
-    'nozim-dev.uz',
- ]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+
+# ALLOWED_HOSTS = [
+#     'media.nozim-dev.uz',
+#     'nozim-dev.uz',
+#     'localhost',
+#  ]
 
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -34,11 +39,13 @@ INSTALLED_APPS = [
     'blog',
     'apps.storages',
     'apps.testmedia',
+    'apps.gallery',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://media.nozim-dev.uz',
     'https://nozim-dev.uz',
+    'http://localhost'
 ]
 
 
@@ -68,7 +75,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -127,3 +134,12 @@ import os
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+
+ASGI_APPLICATION = 'config.asgi.application'
